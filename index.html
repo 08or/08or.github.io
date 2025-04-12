@@ -51,13 +51,6 @@
       color: #ff1493;
       text-decoration: none;
     }
-    .delete-btn {
-      background: none;
-      border: none;
-      font-size: 1.2rem;
-      cursor: pointer;
-      color: #ff3366;
-    }
     .hello-kitty-img {
       width: 120px;
       margin-bottom: 1rem;
@@ -70,76 +63,60 @@
   <div class="upload-box">
     <p>Select a file to upload:</p>
     <input type="file" id="fileInput" />
-    <button onclick="uploadFile()">Upload</button>
   </div>
   <div class="file-list" id="fileList">
     <!-- Files will be listed here -->
   </div>
 
   <script>
-    const BACKEND_URL = "http://localhost:25565"; // ← You can change this to your IP if needed
+    const BACKEND_URL = "http://localhost:5000"; // Change to your IP if accessing from another device
 
     const fileInput = document.getElementById('fileInput');
     const fileList = document.getElementById('fileList');
 
-    function getFileIcon(filename) {
-      const ext = filename.split('.').pop().toLowerCase();
-      if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) return '🖼️';
-      if (['txt', 'md'].includes(ext)) return '📄';
-      if (['zip', 'rar'].includes(ext)) return '🗜️';
-      if (['mp3', 'wav'].includes(ext)) return '🎵';
-      if (['mp4', 'mov'].includes(ext)) return '🎞️';
-      return '📁';
-    }
+    fileInput.addEventListener('change', async () => {
+      const files = fileInput.files;
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
 
-    function uploadFile() {
-      const file = fileInput.files[0];
-      if (!file) return;
+        // Upload file to backend
+        await fetch(`${BACKEND_URL}/upload`, {
+          method: 'POST',
+          body: formData
+        });
 
-      const formData = new FormData();
-      formData.append('file', file);
+        // Add file to list
+        const item = document.createElement('div');
+        item.className = 'file-item';
 
-      fetch('/upload', {
-        method: 'POST',
-        body: formData
-      })
-      .then(() => {
-        addFileItem(file.name);
-        fileInput.value = '';
-      })
-      .catch(err => alert('Upload failed :('));
-    }
+        const link = document.createElement('a');
+        link.href = `${BACKEND_URL}/files/${file.name}`;
+        link.download = file.name;
+        link.textContent = file.name;
 
-    function addFileItem(name) {
-      const item = document.createElement('div');
-      item.className = 'file-item';
+        item.appendChild(link);
+        fileList.appendChild(item);
+      }
+    });
 
-      const link = document.createElement('a');
-      link.href = `/files/${name}`;
-      link.textContent = `${getFileIcon(name)} ${name}`;
-      link.target = "_blank";
+    // Load existing files on page load
+    fetch(`${BACKEND_URL}/files`)
+      .then(res => res.json())
+      .then(files => {
+        files.forEach(file => {
+          const item = document.createElement('div');
+          item.className = 'file-item';
 
-      const del = document.createElement('button');
-      del.textContent = '❌';
-      del.className = 'delete-btn';
-      del.onclick = () => deleteFile(name, item);
+          const link = document.createElement('a');
+          link.href = `${BACKEND_URL}/files/${file}`;
+          link.download = file;
+          link.textContent = file;
 
-      item.appendChild(link);
-      item.appendChild(del);
-      fileList.appendChild(item);
-    }
-
-    function deleteFile(name, itemElement) {
-      fetch(`/files/${name}`, { method: 'DELETE' })
-        .then(() => itemElement.remove())
-        .catch(err => alert('Could not delete file!'));
-    }
-
-    // TODO: On page load, fetch files from server to list them
-    // Example:
-    // fetch('/files')
-    //   .then(res => res.json())
-    //   .then(files => files.forEach(name => addFileItem(name)));
+          item.appendChild(link);
+          fileList.appendChild(item);
+        });
+      });
   </script>
 </body>
 </html>
