@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YAY!!!!! Files :3</title>
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #ffe6f0;
+      font-family: 'Comic Neue', cursive;
+      color: #d63384;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .upload-box {
+      background: #fff0f5;
+      border: 2px dashed #ff69b4;
+      border-radius: 20px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(255, 182, 193, 0.5);
+    }
+    input[type="file"] {
+      margin-top: 1rem;
+    }
+    .file-list {
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 500px;
+    }
+    .file-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 0.5rem;
+      box-shadow: 0 2px 4px rgba(255, 182, 193, 0.3);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .file-item a {
+      color: #ff1493;
+      text-decoration: none;
+    }
+    .delete-btn {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #ff3366;
+    }
+    .hello-kitty-img {
+      width: 120px;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <img class="hello-kitty-img" src="https://pngimg.com/d/hello_kitty_PNG25.png" alt="Hello Kitty">
+  <h1>My skibidi files</h1>
+  <div class="upload-box">
+    <p>Select a file to upload:</p>
+    <input type="file" id="fileInput" />
+    <button onclick="uploadFile()">Upload</button>
+  </div>
+  <div class="file-list" id="fileList">
+    <!-- Files will be listed here -->
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+
+    function getFileIcon(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) return '🖼️';
+      if (['txt', 'md'].includes(ext)) return '📄';
+      if (['zip', 'rar'].includes(ext)) return '🗜️';
+      if (['mp3', 'wav'].includes(ext)) return '🎵';
+      if (['mp4', 'mov'].includes(ext)) return '🎞️';
+      return '📁';
+    }
+
+    function uploadFile() {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      fetch('/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(() => {
+        addFileItem(file.name);
+        fileInput.value = '';
+      })
+      .catch(err => alert('Upload failed :('));
+    }
+
+    function addFileItem(name) {
+      const item = document.createElement('div');
+      item.className = 'file-item';
+
+      const link = document.createElement('a');
+      link.href = `/files/${name}`;
+      link.textContent = `${getFileIcon(name)} ${name}`;
+      link.target = "_blank";
+
+      const del = document.createElement('button');
+      del.textContent = '❌';
+      del.className = 'delete-btn';
+      del.onclick = () => deleteFile(name, item);
+
+      item.appendChild(link);
+      item.appendChild(del);
+      fileList.appendChild(item);
+    }
+
+    function deleteFile(name, itemElement) {
+      fetch(`/files/${name}`, { method: 'DELETE' })
+        .then(() => itemElement.remove())
+        .catch(err => alert('Could not delete file!'));
+    }
+
+    // TODO: On page load, fetch files from server to list them
+    // Example:
+    // fetch('/files')
+    //   .then(res => res.json())
+    //   .then(files => files.forEach(name => addFileItem(name)));
+  </script>
+</body>
+</html>
