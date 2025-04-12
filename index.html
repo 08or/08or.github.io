@@ -61,8 +61,9 @@
   <img class="hello-kitty-img" src="https://pngimg.com/d/hello_kitty_PNG25.png" alt="Hello Kitty">
   <h1>My skibidi files</h1>
   <div class="upload-box">
-    <p>Select a file to upload:</p>
-    <input type="file" id="fileInput" />
+    <p>Select files to upload:</p>
+    <input type="file" id="fileInput" multiple />
+    <button id="uploadBtn" style="margin-top: 1rem;">Upload Files</button>
   </div>
   <div class="file-list" id="fileList">
     <!-- Files will be listed here -->
@@ -73,31 +74,45 @@
 
     const fileInput = document.getElementById('fileInput');
     const fileList = document.getElementById('fileList');
+    const uploadBtn = document.getElementById('uploadBtn');
 
-    fileInput.addEventListener('change', async () => {
+    // Upload files to backend when the button is clicked
+    uploadBtn.addEventListener('click', async () => {
       const files = fileInput.files;
+      if (!files.length) return; // If no files selected, do nothing
+
+      // Loop through selected files and upload each one
       for (const file of files) {
         const formData = new FormData();
         formData.append('file', file);
 
-        // Upload file to backend
-        await fetch(`${BACKEND_URL}/upload`, {
-          method: 'POST',
-          body: formData
-        });
+        try {
+          // Upload file to backend
+          const response = await fetch(`${BACKEND_URL}/upload`, {
+            method: 'POST',
+            body: formData
+          });
 
-        // Add file to list
-        const item = document.createElement('div');
-        item.className = 'file-item';
+          if (!response.ok) throw new Error('Upload failed');
 
-        const link = document.createElement('a');
-        link.href = `${BACKEND_URL}/files/${file.name}`;
-        link.download = file.name;
-        link.textContent = file.name;
+          // Create an item in the file list
+          const item = document.createElement('div');
+          item.className = 'file-item';
 
-        item.appendChild(link);
-        fileList.appendChild(item);
+          const link = document.createElement('a');
+          link.href = `${BACKEND_URL}/files/${file.name}`;
+          link.download = file.name;
+          link.textContent = file.name;
+
+          item.appendChild(link);
+          fileList.appendChild(item);
+
+        } catch (err) {
+          alert(`Failed to upload ${file.name}`);
+        }
       }
+
+      fileInput.value = ''; // Clear file input after upload
     });
 
     // Load existing files on page load
